@@ -81,7 +81,7 @@ class DropdownView(ui.View):
     def populate_table(self):
         console.show_activity()
         if callable(self.items):
-            items = list(self.items())
+            items = self.items()
         else:
             items = self.items
 

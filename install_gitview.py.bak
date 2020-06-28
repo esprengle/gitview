@@ -9,14 +9,14 @@ DULWICH_URL='https://github.com/jsbain/dulwich/archive/ForStaSH_0.12.2.zip#modul
 
 
 def _progress(tot):
-    print('Downloaded {0} bytes'.format(tot))
+    print 'Downloaded {0} bytes'.format(tot)
     
 def main():
     #Make sure you order these in terms of what is needed first
     for i in [FUNKY_URL, DULWICH_URL, GITTLE_URL]:
         installer = ModuleInstaller(i, 
             root_dir=os.path.expanduser('~/Documents'))
-        print("Importing " + installer.module_name)
+        print "Importing " + installer.module_name
         #installer.try_import_or_install(overwrite_existing=True, progress_func=_progress)
         installer.module_install(overwrite_existing=True, progress_func=_progress)
 
@@ -25,11 +25,11 @@ def main():
 import mimetypes
 import tarfile
 import zipfile
-import urllib.request, urllib.error, urllib.parse
+import urllib2
 import contextlib
 import shutil
 import glob
-import urllib.parse
+import urlparse
 import os
 import sys
 import importlib
@@ -63,8 +63,8 @@ class ModuleInstaller():
         mimetypes.init()
 
         self.url = url
-        parsed_url = urllib.parse.urlparse(url)
-        qs = urllib.parse.parse_qs(parsed_url.fragment)
+        parsed_url = urlparse.urlparse(url)
+        qs = urlparse.parse_qs(parsed_url.fragment)
 
         #Make sure required query params exist
         if not qs.get('module_name') \
@@ -162,7 +162,7 @@ class ModuleInstaller():
             os.path.basename(url.split('?',1)[0])
         try:
             total=0
-            with contextlib.closing(urllib.request.urlopen(url)) as c:
+            with contextlib.closing(urllib2.urlopen(url)) as c:
                 with open(dst,'wb') as f:
                     while True:
                         data=c.read(32*1024)
@@ -210,7 +210,7 @@ class ModuleInstaller():
             #Expand any wildcards in module_path
             src = self._glob_expand_path(module_full_path)
             
-            print(src)
+            print src
             #Rename module folder
             if os.path.isdir(src) and os.path.basename(src) != self.module_name:
                 new_name = os.path.join(os.path.dirname(src), self.module_name)

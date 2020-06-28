@@ -35,7 +35,7 @@ import itertools     #chain
 import functools     #partial
 import keychain     #for auth saving
 import posix        #lstat
-import urllib.parse,urllib.request,urllib.error,urllib.parse   #for push
+import urlparse,urllib2   #for push
 
 
 SAVE_PASSWORDS=True
@@ -277,24 +277,24 @@ class repoView (object):
         if len(args) == 0:
             repo = _get_repo()
             status = porcelain.status(repo.repo)
-            print(status)
+            print status
         else:
-            print(command_help['git_staged'])
+            print command_help['git_staged']
 
     def branch_iterator(self):
         self.g=self._get_repo()
         if self.g:
-            return iter(self.g.branches.keys())
+            return self.g.branches.iterkeys()
             
     def remotes_iterator(self):
         self.g=self._get_repo()
         if self.g:
-            return iter(self.g.remotes.keys())
+            return self.g.remotes.iterkeys()
             
     def remote_branches_iterator(self):
         self.g=self._get_repo()
         if self.g:
-            return iter(self.g.remote_branches.keys())
+            return self.g.remote_branches.iterkeys()
             
     def did_select_repo(self,sender):
 
@@ -312,7 +312,7 @@ class repoView (object):
             self.view['email'].text=author_email
             remote, remote_branch=self.remote_for_head()
             if not remote:
-            	remote=next(self.remotes_iterator())
+            	remote=self.remotes_iterator().next()
             self.view['remote'].text=remote
             self.view['remotebranch'].text=remote_branch
         else:
@@ -331,7 +331,7 @@ class repoView (object):
         except (KeyError, AttributeError):
             return '',''
     def commit(self,sender):
-        if list(itertools.chain(*iter(porcelain.status(self.g.path).staged.values()))):
+        if list(itertools.chain(*porcelain.status(self.g.path).staged.itervalues())):
             self.g=self._get_repo()
             user=self.view['user'].text
             email=self.view['email'].text
@@ -391,7 +391,7 @@ class repoView (object):
         for entry in repo.object_store.iter_tree_contents(tree_id):
             self.unstage(self._repo(),[entry.path])
             
-        for entry in index.items():
+        for entry in index.iteritems():
             self.unstage(self._repo(),[entry[0]])
             
     def has_uncommitted_changes(self):
@@ -434,7 +434,7 @@ class repoView (object):
         self.view['branch'].text=self._get_repo().active_branch
         
     def remote_for_head(self):
-        refs=iter(self._repo().refs.as_dict().items())
+        refs=self._repo().refs.as_dict().iteritems()
 
         try:
             head=self._repo().head()
@@ -490,7 +490,7 @@ class repoView (object):
                 self.view['repo'].text=local
                 self.did_select_repo(self.view['repo'])
                 console.hud_alert('clone successful')
-            except urllib.error.URLError:
+            except urllib2.URLError:
                 console.hud_alert('invalid remote url. check url and try again','error')
             except OSError:
                 def overwrite(items):
@@ -511,7 +511,7 @@ class repoView (object):
         local=''
         if clipboard.get().startswith('http'):
             remote=clipboard.get()
-            local=os.path.split(urllib.parse.urlparse(remote).path)[-1]
+            local=os.path.split(urlparse.urlparse(remote).path)[-1]
             local= local.split('.git')[0]  
         d=UIDialog(root=self.view,title='Clone repo',items={'remote url':remote,'local path':local},ok_action=self.clone)
         
@@ -532,7 +532,7 @@ class repoView (object):
         if remote in self.remotes_iterator():
             uri=repo.remotes.get(remote,'')
         else:
-            print(remote, 'adding')
+            print remote, 'adding'
             uri=remote
             #Set the origin
             config = repo.repo.get_config()
@@ -560,24 +560,24 @@ class repoView (object):
         # tODO  use remote branch_name 
 
 
-        netloc = urllib.parse.urlparse(remote).netloc
+        netloc = urlparse.urlparse(remote).netloc
 
         keychainservice = 'shellista.git.{0}'.format(netloc)
 
         #define some callbacks for use by uidialog
         def push_callback(user,pw):
-            print("Attempting to push to: {0}, branch: {1}".format(remote, branch_name))
+            print  "Attempting to push to: {0}, branch: {1}".format(remote, branch_name)
             console.show_activity()
             if user:
                try:
-                  parsedurl=urllib.parse.urlparse(remote)
+                  parsedurl=urlparse.urlparse(remote)
                   host_with_auth='{}:{}@{}'.format( 
                                   user,pw,parsedurl.netloc)
-                  url=urllib.parse.urlunparse(
+                  url=urlparse.urlunparse(
                       parsedurl._replace( netloc=host_with_auth))
                   porcelain.push(repo.path, url, branch_name)
                   keychain.set_password(keychainservice, user, pw)
-               except urllib.error.URLError:
+               except urllib2.URLError:
                   console.hide_activity()
                   console.hud_alert('push failed','error')
                   return
@@ -609,7 +609,7 @@ class repoView (object):
         # tODO  use remote branch_name 
 
 
-        netloc = urllib.parse.urlparse(remote).netloc
+        netloc = urlparse.urlparse(remote).netloc
 
         keychainservice = 'shellista.git.{0}'.format(netloc)
         try:
@@ -620,8 +620,8 @@ class repoView (object):
             console.hud_alert('no saved auth for {}'.format( netloc))
 
     def log_action(self,sender):
-        import io
-        s=io.StringIO()
+        import StringIO
+        s=StringIO.StringIO()
         w=ui.WebView(frame=self.view.frame)
         w.name='Log'
         porcelain.log(self._repo().path, outstream=s)
